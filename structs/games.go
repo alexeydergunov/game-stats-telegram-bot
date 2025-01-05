@@ -5,15 +5,15 @@ func GetSupportedGames() []Game {
 		{
 			Name: "Codenames",
 			Roles: map[string][]string{
-				"First":  {"Captain", "Player"},
-				"Second": {"Captain", "Player"},
+				"First":  {"FirstTeamCaptain", "FirstTeamPlayer"},
+				"Second": {"SecondTeamCaptain", "SecondTeamPlayer"},
 			},
 		},
 		{
 			Name: "Decrypto",
 			Roles: map[string][]string{
-				"First":  {"Player"},
-				"Second": {"Player"},
+				"White": {"WhitePlayer"},
+				"Black": {"BlackPlayer"},
 			},
 		},
 		{

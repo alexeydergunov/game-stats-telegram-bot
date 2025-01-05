@@ -35,3 +35,16 @@ func RegisterPlayer(bot *tgbotapi.BotAPI, chatId int64, requestMessageId int, sq
 	message.ReplyToMessageID = requestMessageId
 	send(bot, message)
 }
+
+func ListGames(bot *tgbotapi.BotAPI, chatId int64, requestMessageId int, games []structs.Game) {
+	messageText := "Supported games:\n"
+	for _, game := range games {
+		messageText += fmt.Sprintf("- %s\n", game.Name)
+		for team, roles := range game.Roles {
+			messageText += fmt.Sprintf("  - %s : %v\n", team, roles)
+		}
+	}
+	message := tgbotapi.NewMessage(chatId, messageText)
+	message.ReplyToMessageID = requestMessageId
+	send(bot, message)
+}

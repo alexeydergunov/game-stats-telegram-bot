@@ -20,13 +20,18 @@ func RunBot(token string, sqlDb *sql.DB, games []structs.Game) {
 
 	updates := bot.GetUpdatesChan(updateConfig)
 	for update := range updates {
-		if update.Message == nil {
+		message := update.Message
+		if message == nil {
 			continue
 		}
 
-		if update.Message.Command() == "register" {
-			player := structs.Player{Name: update.Message.From.UserName, TgId: update.Message.From.ID}
-			RegisterPlayer(bot, update.Message.Chat.ID, update.Message.MessageID, sqlDb, player)
+		if message.Command() == "register" {
+			player := structs.Player{Name: message.From.UserName, TgId: message.From.ID}
+			RegisterPlayer(bot, message.Chat.ID, message.MessageID, sqlDb, player)
+		}
+
+		if message.Command() == "list_games" {
+			ListGames(bot, message.Chat.ID, message.MessageID, games)
 		}
 	}
 }
