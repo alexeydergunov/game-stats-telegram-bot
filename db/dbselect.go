@@ -3,26 +3,29 @@ package db
 import (
 	"database/sql"
 	"log"
+	"strconv"
 	"strings"
-
-	"example.com/structs"
 )
 
-func findPlayersByName(db *sql.DB, players []structs.Player) []Player {
-	log.Println("Finding", len(players), "players")
-	var playerNames []any
+func intToString(x int64) string {
+	return strconv.FormatInt(x, 10)
+}
+
+func findPlayersByTgId(db *sql.DB, tgIds []int64) []Player {
+	log.Println("Finding", len(tgIds), "players")
+	var tgIdsStr []any
 	var questions []string
-	for _, player := range players {
-		playerNames = append(playerNames, player.Name)
+	for _, tgId := range tgIds {
+		tgIdsStr = append(tgIdsStr, intToString(tgId))
 		questions = append(questions, "?")
 	}
 	whereList := "(" + strings.Join(questions, ",") + ")"
 	log.Println("whereList: " + whereList)
-	statement, err := db.Prepare("SELECT * FROM player WHERE name in " + whereList) // TODO use tg_id
+	statement, err := db.Prepare("SELECT * FROM player WHERE tg_id in " + whereList)
 	if err != nil {
 		log.Fatal(err)
 	}
-	row, err := statement.Query(playerNames...)
+	row, err := statement.Query(tgIdsStr...)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,9 +41,9 @@ func findPlayersByName(db *sql.DB, players []structs.Player) []Player {
 	return result
 }
 
-func findOnePlayerByName(db *sql.DB, player structs.Player) *Player {
-	log.Println("Finding player", player)
-	result := findPlayersByName(db, []structs.Player{player})
+func FindOnePlayerByTgId(db *sql.DB, tgId int64) *Player {
+	log.Println("Finding player with tgId", tgId)
+	result := findPlayersByTgId(db, []int64{tgId})
 	if len(result) == 0 {
 		return nil
 	}

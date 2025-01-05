@@ -2,11 +2,13 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 	"os"
 
 	"example.com/db"
 	"example.com/structs"
+	"example.com/tg"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -14,60 +16,39 @@ import (
 const DB_FILENAME = "./_sqlite3db.bin"
 
 func main() {
+	token := os.Getenv("TG_TOKEN")
+	if len(token) == 0 {
+		tokenBinary, err := os.ReadFile("token.txt")
+		if err != nil {
+			log.Fatalln(err.Error())
+		}
+		token = string(tokenBinary)
+	}
+	if len(token) == 0 {
+		log.Fatalln("Token is not set")
+	}
+	log.Println("Token:", token[:10]+"..."+token[len(token)-10:])
+
 	games := structs.GetSupportedGames()
 	for _, game := range games {
 		log.Println("Game:", game)
 	}
 
-	os.Remove(DB_FILENAME)
-	log.Println("Creating db file", DB_FILENAME)
-	file, err := os.Create(DB_FILENAME)
-	if err != nil {
-		log.Fatal(err.Error())
+	if fileInfo, err := os.Stat(DB_FILENAME); errors.Is(err, os.ErrNotExist) {
+		log.Println("Db file", DB_FILENAME, "does not exist, creating...")
+		file, err := os.Create(DB_FILENAME)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		file.Close()
+		log.Println("Created db file", DB_FILENAME)
+	} else {
+		log.Println("Db file", DB_FILENAME, "already exists, size =", fileInfo.Size())
 	}
-	file.Close()
-	log.Println("Created db in file", DB_FILENAME)
-
 	sqlDb, _ := sql.Open("sqlite3", DB_FILENAME)
 	defer sqlDb.Close()
 
 	db.CreateTables(sqlDb)
 
-	players := []structs.Player{
-		{Name: "Alex", TgId: 11},
-		{Name: "Bob", TgId: 22},
-		{Name: "Charlie", TgId: 33},
-		{Name: "Dennis", TgId: 44},
-		{Name: "Eugene", TgId: 55},
-	}
-
-	for _, player := range players {
-		db.GetOrInsertPlayer(sqlDb, player)
-	}
-
-	matchId := db.InsertMatchResult(sqlDb, structs.Result{
-		Game: games[3],
-		PlayerRoles: map[structs.Player]string{
-			players[0]: "Merlin",
-			players[1]: "Perceval",
-			players[2]: "Knight",
-			players[3]: "Morgana",
-			players[4]: "Assassin",
-		},
-		TeamOrder: []string{"Knights", "Assassins"},
-	})
-	log.Println("Match id:", matchId)
-
-	for _, obj := range db.FindAllPlayers(sqlDb) {
-		log.Println("Player:", obj)
-	}
-	for _, obj := range db.FindAllMatches(sqlDb) {
-		log.Println("Match:", obj)
-	}
-	for _, obj := range db.FindAllMatchPlayerRoles(sqlDb) {
-		log.Println("Match player role:", obj)
-	}
-	for _, obj := range db.FindAllMatchTeamResults(sqlDb) {
-		log.Println("Match team result:", obj)
-	}
+	tg.RunBot(token, sqlDb, games)
 }

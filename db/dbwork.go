@@ -8,7 +8,7 @@ import (
 )
 
 func GetOrInsertPlayer(db *sql.DB, player structs.Player) Player {
-	existingPlayer := findOnePlayerByName(db, player)
+	existingPlayer := FindOnePlayerByTgId(db, player.TgId)
 	if existingPlayer != nil {
 		log.Println("Found existing player", *existingPlayer)
 		return *existingPlayer
@@ -24,7 +24,7 @@ func InsertMatchResult(db *sql.DB, matchResult structs.Result) int64 {
 	// TODO optimize
 	var matchPlayerRoles []MatchPlayerRole
 	for player, role := range matchResult.PlayerRoles {
-		playerId := findOnePlayerByName(db, player).id
+		playerId := FindOnePlayerByTgId(db, player.TgId).id
 		matchPlayerRoles = append(matchPlayerRoles, MatchPlayerRole{id: -1, matchId: matchId, playerId: playerId, role: role})
 	}
 	for _, matchPlayerRole := range matchPlayerRoles {
