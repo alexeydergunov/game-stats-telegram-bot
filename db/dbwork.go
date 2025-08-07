@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"log"
+	"slices"
 	"sort"
 
 	"example.com/structs"
@@ -27,6 +28,24 @@ func GetAllPlayers(db *sql.DB) []structs.Player {
 	return result
 }
 
+func makeResult(game structs.Game, playerByIdMap map[int64]Player, matchTeamResults []MatchTeamResult, matchPlayerRoles []MatchPlayerRole) structs.Result {
+	playerRoles := make(map[structs.Player]string)
+	for _, matchPlayerRole := range matchPlayerRoles {
+		player := playerByIdMap[matchPlayerRole.playerId]
+		playerRoles[structs.Player{Name: player.name, TgId: player.tgId}] = matchPlayerRole.role
+	}
+
+	sort.Slice(matchTeamResults, func(i int, j int) bool {
+		return matchTeamResults[i].place < matchTeamResults[j].place
+	})
+	var teamOrder []string
+	for _, matchTeamResult := range matchTeamResults {
+		teamOrder = append(teamOrder, matchTeamResult.team)
+	}
+
+	return structs.Result{Game: game, PlayerRoles: playerRoles, TeamOrder: teamOrder}
+}
+
 func GetMatchResult(db *sql.DB, matchId int64) *structs.Result {
 	matchNullable := findOneMatch(db, matchId)
 	if matchNullable == nil {
@@ -48,21 +67,59 @@ func GetMatchResult(db *sql.DB, matchId int64) *structs.Result {
 
 	game := *structs.FindGameByName(matchNullable.game)
 
-	playerRoles := make(map[structs.Player]string)
-	for _, matchPlayerRole := range matchPlayerRoles {
-		player := playerByIdMap[matchPlayerRole.playerId]
-		playerRoles[structs.Player{Name: player.name, TgId: player.tgId}] = matchPlayerRole.role
-	}
+	result := makeResult(game, playerByIdMap, matchTeamResults, matchPlayerRoles)
+	return &result
+}
 
-	sort.Slice(matchTeamResults, func(i int, j int) bool {
-		return matchTeamResults[i].place < matchTeamResults[j].place
-	})
-	var teamOrder []string
+func GetMatchResultsByGame(db *sql.DB, gameName string) map[int64]structs.Result {
+	game := *structs.FindGameByName(gameName)
+
+	allMatches := FindAllMatches(db)
+	var goodMatchIds []int64
+	for _, match := range allMatches {
+		if match.game == game.Name {
+			goodMatchIds = append(goodMatchIds, match.id)
+		}
+	}
+	slices.Sort(goodMatchIds)
+
+	matchTeamResults := FindAllMatchTeamResults(db)
+	matchPlayerRoles := FindAllMatchPlayerRoles(db)
+
+	var playerIds []int64
+	var matchTeamResultsByMatchId = make(map[int64][]MatchTeamResult)
+	var matchPlayerRolesByMatchId = make(map[int64][]MatchPlayerRole)
+	for _, matchId := range goodMatchIds {
+		matchTeamResultsByMatchId[matchId] = []MatchTeamResult{}
+		matchPlayerRolesByMatchId[matchId] = []MatchPlayerRole{}
+	}
 	for _, matchTeamResult := range matchTeamResults {
-		teamOrder = append(teamOrder, matchTeamResult.team)
+		matchId := matchTeamResult.matchId
+		_, contains := slices.BinarySearch(goodMatchIds, matchId)
+		if contains {
+			matchTeamResultsByMatchId[matchId] = append(matchTeamResultsByMatchId[matchId], matchTeamResult)
+		}
+	}
+	for _, matchPlayerRole := range matchPlayerRoles {
+		matchId := matchPlayerRole.matchId
+		_, contains := slices.BinarySearch(goodMatchIds, matchId)
+		if contains {
+			matchPlayerRolesByMatchId[matchId] = append(matchPlayerRolesByMatchId[matchId], matchPlayerRole)
+			playerIds = append(playerIds, matchPlayerRole.playerId)
+		}
 	}
 
-	return &structs.Result{Game: game, PlayerRoles: playerRoles, TeamOrder: teamOrder}
+	players := findPlayersById(db, playerIds)
+	playerByIdMap := make(map[int64]Player)
+	for _, player := range players {
+		playerByIdMap[player.id] = player
+	}
+
+	var matchResults = make(map[int64]structs.Result)
+	for _, matchId := range goodMatchIds {
+		matchResults[matchId] = makeResult(game, playerByIdMap, matchTeamResultsByMatchId[matchId], matchPlayerRolesByMatchId[matchId])
+	}
+	return matchResults
 }
 
 func InsertMatchResult(db *sql.DB, matchResult structs.Result) int64 {

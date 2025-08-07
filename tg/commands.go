@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"example.com/db"
+	"example.com/ratings"
 	"example.com/structs"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -137,6 +138,20 @@ func RegisterMatch(bot *tgbotapi.BotAPI, chatId int64, requestMessageId int, sql
 		messageText += fmt.Sprintf("Registered match %d", matchId)
 	}
 
+	message := tgbotapi.NewMessage(chatId, messageText)
+	message.ReplyToMessageID = requestMessageId
+	message.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+	send(bot, message)
+}
+
+func GetRatingList(bot *tgbotapi.BotAPI, chatId int64, requestMessageId int, sqlDb *sql.DB, game structs.Game) {
+	matchIdResultMap := db.GetMatchResultsByGame(sqlDb, game.Name)
+	playerRatingMap := ratings.CalcTrueskillRatings(game, matchIdResultMap)
+
+	messageText := fmt.Sprintf("Rating list for game %s:\n", game.Name)
+	for player, rating := range playerRatingMap {
+		messageText += fmt.Sprintf("  - %v: %.3f\n", player, rating)
+	}
 	message := tgbotapi.NewMessage(chatId, messageText)
 	message.ReplyToMessageID = requestMessageId
 	message.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)

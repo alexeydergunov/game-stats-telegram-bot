@@ -39,6 +39,7 @@ func RunBot(token string, sqlDb *sql.DB, games []structs.Game) {
 		tgbotapi.BotCommand{Command: "list_games", Description: "List supported games"},
 		tgbotapi.BotCommand{Command: "list_players", Description: "List registered players"},
 		tgbotapi.BotCommand{Command: "get_match_result", Description: "Get match result (argument [match_id])"},
+		tgbotapi.BotCommand{Command: "get_rating_list", Description: "Get rating list (argument [game])"},
 		tgbotapi.BotCommand{Command: "register_match", Description: "Register new match (with dialog)"},
 	)
 	_, err = bot.Request(commandsConfig)
@@ -78,6 +79,18 @@ func RunBot(token string, sqlDb *sql.DB, games []structs.Game) {
 				send(bot, replyMessage)
 			} else {
 				GetMatchResult(bot, chatId, message.MessageID, sqlDb, matchId)
+			}
+		}
+
+		if command == "get_rating_list" {
+			gameName := message.CommandArguments()
+			game := structs.FindGameByName(gameName)
+			if game == nil {
+				replyMessage := tgbotapi.NewMessage(chatId, "Wrong arguments or unsupported game, use '/get_rating_list [game]'")
+				replyMessage.ReplyToMessageID = message.MessageID
+				send(bot, replyMessage)
+			} else {
+				GetRatingList(bot, chatId, message.MessageID, sqlDb, *game)
 			}
 		}
 

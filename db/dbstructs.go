@@ -9,6 +9,7 @@ type Player struct {
 type Match struct {
 	id   int64
 	game string
+	// TODO add timestamp
 }
 
 type MatchPlayerRole struct {
