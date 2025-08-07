@@ -3,6 +3,7 @@ package tg
 import (
 	"database/sql"
 	"log"
+	"strconv"
 
 	"example.com/structs"
 
@@ -32,6 +33,22 @@ func RunBot(token string, sqlDb *sql.DB, games []structs.Game) {
 
 		if message.Command() == "list_games" {
 			ListGames(bot, message.Chat.ID, message.MessageID, games)
+		}
+
+		if message.Command() == "list_players" {
+			ListPlayers(bot, message.Chat.ID, message.MessageID, sqlDb)
+		}
+
+		if message.Command() == "get_match_result" {
+			commandArguments := message.CommandArguments()
+			matchId, err := strconv.ParseInt(commandArguments, 10, 64)
+			if err != nil {
+				replyMessage := tgbotapi.NewMessage(message.Chat.ID, "Wrong arguments, use '/get_match_result [match_id]'")
+				replyMessage.ReplyToMessageID = message.MessageID
+				send(bot, replyMessage)
+			} else {
+				GetMatchResult(bot, message.Chat.ID, message.MessageID, sqlDb, matchId)
+			}
 		}
 	}
 }

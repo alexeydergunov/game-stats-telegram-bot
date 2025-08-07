@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"log"
+	"sort"
 
 	"example.com/structs"
 )
@@ -17,11 +18,49 @@ func GetOrInsertPlayer(db *sql.DB, player structs.Player) Player {
 	return *findOnePlayer(db, playerId)
 }
 
+func GetMatchResult(db *sql.DB, matchId int64) *structs.Result {
+	matchNullable := findOneMatch(db, matchId)
+	if matchNullable == nil {
+		return nil
+	}
+
+	matchTeamResults := findMatchTeamResultsByMatchId(db, matchId)
+	matchPlayerRoles := findMatchPlayerRolesByMatchId(db, matchId)
+
+	var playerIds []int64
+	for _, matchPlayerRole := range matchPlayerRoles {
+		playerIds = append(playerIds, matchPlayerRole.playerId)
+	}
+	players := findPlayersById(db, playerIds)
+	playerByIdMap := make(map[int64]Player)
+	for _, player := range players {
+		playerByIdMap[player.id] = player
+	}
+
+	game := *structs.FindGameByName(matchNullable.game)
+
+	playerRoles := make(map[structs.Player]string)
+	for _, matchPlayerRole := range matchPlayerRoles {
+		player := playerByIdMap[matchPlayerRole.playerId]
+		playerRoles[structs.Player{Name: player.name, TgId: player.tgId}] = matchPlayerRole.role
+	}
+
+	sort.Slice(matchTeamResults, func(i int, j int) bool {
+		return matchTeamResults[i].place < matchTeamResults[j].place
+	})
+	var teamOrder []string
+	for _, matchTeamResult := range matchTeamResults {
+		teamOrder = append(teamOrder, matchTeamResult.team)
+	}
+
+	return &structs.Result{Game: game, PlayerRoles: playerRoles, TeamOrder: teamOrder}
+}
+
 func InsertMatchResult(db *sql.DB, matchResult structs.Result) int64 {
 	matchId := insertMatch(db, Match{id: -1, game: matchResult.Game.Name})
 	log.Println("Inserted match with id", matchId)
 
-	// TODO optimize
+	// TODO optimize, validate
 	var matchPlayerRoles []MatchPlayerRole
 	for player, role := range matchResult.PlayerRoles {
 		playerId := FindOnePlayerByTgId(db, player.TgId).id

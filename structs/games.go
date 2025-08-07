@@ -1,5 +1,10 @@
 package structs
 
+import (
+	"log"
+	"slices"
+)
+
 func GetSupportedGames() []Game {
 	return []Game{
 		{
@@ -31,4 +36,26 @@ func GetSupportedGames() []Game {
 			},
 		},
 	}
+}
+
+func FindGameByName(name string) *Game {
+	games := GetSupportedGames()
+	for _, game := range games {
+		if game.Name == name {
+			log.Println("Found game with name", name)
+			return &game
+		}
+	}
+	log.Fatalln("Game with name", name, "is not supported")
+	return nil
+}
+
+func GetTeamByRole(teamRolesMap map[string][]string, roleToFind string) *string {
+	for team, roles := range teamRolesMap {
+		if slices.Contains(roles, roleToFind) {
+			return &team
+		}
+	}
+	log.Fatalln("Couldn't find team for role", roleToFind)
+	return nil
 }

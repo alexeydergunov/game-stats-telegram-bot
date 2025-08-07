@@ -50,5 +50,28 @@ func main() {
 
 	db.CreateTables(sqlDb)
 
+	// TODO delete
+	// fakePlayers := []structs.Player{
+	// 	{Name: "fake_1", TgId: 1001},
+	// 	{Name: "fake_2", TgId: 1002},
+	// 	{Name: "fake_3", TgId: 1003},
+	// 	{Name: "fake_4", TgId: 1004},
+	// 	{Name: "fake_5", TgId: 1005},
+	// }
+	// for _, fakePlayer := range fakePlayers {
+	// 	db.GetOrInsertPlayer(sqlDb, fakePlayer)
+	// }
+	// db.InsertMatchResult(sqlDb, structs.Result{
+	// 	Game: *structs.FindGameByName("Secret Hitler"),
+	// 	PlayerRoles: map[structs.Player]string{
+	// 		fakePlayers[0]: "Liberal",
+	// 		fakePlayers[1]: "Fascist",
+	// 		fakePlayers[2]: "Liberal",
+	// 		fakePlayers[3]: "Liberal",
+	// 		fakePlayers[4]: "Hitler",
+	// 	},
+	// 	TeamOrder: []string{"Liberals", "Fascists"},
+	// })
+
 	tg.RunBot(token, sqlDb, games)
 }
