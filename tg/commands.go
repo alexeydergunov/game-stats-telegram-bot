@@ -148,9 +148,25 @@ func GetRatingList(bot *tgbotapi.BotAPI, chatId int64, requestMessageId int, sql
 	matchIdResultMap := db.GetMatchResultsByGame(sqlDb, game.Name)
 	playerRatingMap := ratings.CalcTrueskillRatings(game, matchIdResultMap)
 
-	messageText := fmt.Sprintf("Rating list for game %s:\n", game.Name)
+	type PlayerWithRating struct {
+		player structs.Player
+		rating float64
+	}
+
+	var arr []PlayerWithRating
 	for player, rating := range playerRatingMap {
-		messageText += fmt.Sprintf("  - %v: %.3f\n", player, rating)
+		arr = append(arr, PlayerWithRating{player, rating})
+	}
+	sort.Slice(arr, func(i int, j int) bool {
+		if arr[i].rating != arr[j].rating {
+			return arr[i].rating > arr[j].rating
+		}
+		return arr[i].player.Name < arr[j].player.Name
+	})
+
+	messageText := fmt.Sprintf("Rating list for game %s:\n", game.Name)
+	for _, playerWithrating := range arr {
+		messageText += fmt.Sprintf("  - %v: %.3f\n", playerWithrating.player, playerWithrating.rating)
 	}
 	message := tgbotapi.NewMessage(chatId, messageText)
 	message.ReplyToMessageID = requestMessageId
