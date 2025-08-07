@@ -52,7 +52,7 @@ func ListGames(bot *tgbotapi.BotAPI, chatId int64, requestMessageId int, games [
 }
 
 func ListPlayers(bot *tgbotapi.BotAPI, chatId int64, requestMessageId int, sqlDb *sql.DB) {
-	players := db.FindAllPlayers(sqlDb)
+	players := db.GetAllPlayers(sqlDb)
 	messageText := "Registered players:\n"
 	for _, player := range players {
 		messageText += fmt.Sprintf("  - %v\n", player)
@@ -136,5 +136,6 @@ func RegisterMatch(bot *tgbotapi.BotAPI, chatId int64, requestMessageId int, sql
 
 	message := tgbotapi.NewMessage(chatId, messageText)
 	message.ReplyToMessageID = requestMessageId
+	message.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	send(bot, message)
 }

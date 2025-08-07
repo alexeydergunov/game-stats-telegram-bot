@@ -18,6 +18,15 @@ func GetOrInsertPlayer(db *sql.DB, player structs.Player) Player {
 	return *findOnePlayer(db, playerId)
 }
 
+func GetAllPlayers(db *sql.DB) []structs.Player {
+	var result []structs.Player
+	dbPlayers := FindAllPlayers(db)
+	for _, player := range dbPlayers {
+		result = append(result, structs.Player{Name: player.name, TgId: player.tgId})
+	}
+	return result
+}
+
 func GetMatchResult(db *sql.DB, matchId int64) *structs.Result {
 	matchNullable := findOneMatch(db, matchId)
 	if matchNullable == nil {
