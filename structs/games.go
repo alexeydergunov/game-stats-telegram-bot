@@ -68,7 +68,6 @@ func FindGameByName(name string) *Game {
 			return &game
 		}
 	}
-	log.Fatalln("Game with name", name, "is not supported")
 	return nil
 }
 
