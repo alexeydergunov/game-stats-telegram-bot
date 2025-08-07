@@ -1,2 +1,6 @@
+github.com/chobie/go-gaussian v0.0.0-20150107165016-53c09d90eeaf h1:joIg05jbCevMTHYELK+iU5xNS6FoOEhp9IpFQ5e2B+8=
+github.com/chobie/go-gaussian v0.0.0-20150107165016-53c09d90eeaf/go.mod h1:cTHhhPCN9aDCOgkFM4Pty90DILaV/TrfCRhMtOFCUUI=
+github.com/gami/go-trueskill v0.0.0-20210522135225-3b7dd85a7d62 h1:UmCrqrLNupEFeo4LU/Fc/rYlLl38GDh7WvmK6dw3Kms=
+github.com/gami/go-trueskill v0.0.0-20210522135225-3b7dd85a7d62/go.mod h1:2gW3t1RIj+V/H6QMFou00I8/CQ++cpdM4PBBpRRaKBQ=
 github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1 h1:wG8n/XJQ07TmjbITcGiUaOtXxdrINDz1b0J1w0SzqDc=
 github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1/go.mod h1:A2S0CWkNylc2phvKXWBBdD3K0iGnDBGbzRpISP2zBl8=
