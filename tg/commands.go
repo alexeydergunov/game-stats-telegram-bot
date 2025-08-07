@@ -80,7 +80,7 @@ func GetMatchResult(bot *tgbotapi.BotAPI, chatId int64, requestMessageId int, sq
 		var roleTeamMap = make(map[string]string)
 		for team, roles := range game.Roles {
 			for _, role := range roles {
-				roleTeamMap[role] = team
+				roleTeamMap[role.Name] = team
 			}
 		}
 		sort.Slice(players, func(i int, j int) bool {
@@ -94,7 +94,10 @@ func GetMatchResult(bot *tgbotapi.BotAPI, chatId int64, requestMessageId int, sq
 				log.Println("Comparing...", role1, role2, team1, team2, index1, index2)
 				return index1 < index2
 			}
-			teamRoles := game.Roles[team1]
+			var teamRoles []string
+			for _, role := range game.Roles[team1] {
+				teamRoles = append(teamRoles, role.Name)
+			}
 			index1 := slices.Index(teamRoles, role1)
 			index2 := slices.Index(teamRoles, role2)
 			if index1 != index2 {

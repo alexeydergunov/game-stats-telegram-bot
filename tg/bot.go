@@ -95,21 +95,43 @@ func RunBot(token string, sqlDb *sql.DB, games []structs.Game) {
 
 			allPlayers := db.GetAllPlayers(sqlDb)
 			var playerRoles = make(map[structs.Player]string)
+			failure := false
 			for team, roles := range game.Roles {
+				if failure {
+					break
+				}
 				for _, role := range roles {
-					players := enterPlayersForRole(bot, updates, chatId, allPlayers, team, role)
+					if failure {
+						break
+					}
+					players := enterPlayersForRole(bot, updates, chatId, allPlayers, team, role.Name, role.IsUnique)
 					if players == nil {
 						cancelMessage := tgbotapi.NewMessage(chatId, "New match registration was cancelled")
 						cancelMessage.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 						send(bot, cancelMessage)
+						failure = true
 						continue
 					}
-					messageText := fmt.Sprintf("You selected the following players for team %s, role %s:\n", team, role)
+					if len(*players) == 0 {
+						cancelMessage := tgbotapi.NewMessage(chatId, "Empty players list was selected, cancelling match registration")
+						cancelMessage.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+						send(bot, cancelMessage)
+						failure = true
+						continue
+					}
+					if role.IsUnique && len(*players) != 1 {
+						cancelMessage := tgbotapi.NewMessage(chatId, "Not a single players was selected for a unique role, cancelling match registration")
+						cancelMessage.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+						send(bot, cancelMessage)
+						failure = true
+						continue
+					}
+					messageText := fmt.Sprintf("You selected the following players for team %s, role %s:\n", team, role.Name)
 					for _, player := range *players {
 						messageText += fmt.Sprintf("  - %v\n", player)
 					}
 					for _, player := range *players {
-						playerRoles[player] = role
+						playerRoles[player] = role.Name
 					}
 					replyMessage := tgbotapi.NewMessage(chatId, messageText)
 					replyMessage.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
@@ -118,6 +140,9 @@ func RunBot(token string, sqlDb *sql.DB, games []structs.Game) {
 					allPlayers = deleteFromSlice(allPlayers, *players)
 				}
 			}
+			if failure {
+				continue
+			}
 
 			var allTeams []string
 			for team := range game.Roles {
@@ -125,19 +150,20 @@ func RunBot(token string, sqlDb *sql.DB, games []structs.Game) {
 			}
 			teamCount := len(allTeams)
 			var teamOrder []string
-			failure := false
 			for place := 1; place <= teamCount; place++ {
 				team := enterTeam(bot, updates, chatId, allTeams, int64(place))
 				if team == nil {
 					cancelMessage := tgbotapi.NewMessage(chatId, "New match registration was cancelled")
 					cancelMessage.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 					send(bot, cancelMessage)
+					failure = true
 					continue
 				}
 				if len(*team) == 0 {
 					cancelMessage := tgbotapi.NewMessage(chatId, "Empty team was selected, cancelling match registration")
 					cancelMessage.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 					send(bot, cancelMessage)
+					failure = true
 					continue
 				}
 				if slices.Contains(teamOrder, *team) {
@@ -238,7 +264,7 @@ func enterTeam(bot *tgbotapi.BotAPI, updates tgbotapi.UpdatesChannel, chatId int
 	return nil
 }
 
-func enterPlayersForRole(bot *tgbotapi.BotAPI, updates tgbotapi.UpdatesChannel, chatId int64, allPlayers []structs.Player, team string, role string) *[]structs.Player {
+func enterPlayersForRole(bot *tgbotapi.BotAPI, updates tgbotapi.UpdatesChannel, chatId int64, allPlayers []structs.Player, team string, role string, isUnique bool) *[]structs.Player {
 	sort.Slice(allPlayers, func(i int, j int) bool {
 		return allPlayers[i].Name < allPlayers[j].Name
 	})
@@ -246,6 +272,10 @@ func enterPlayersForRole(bot *tgbotapi.BotAPI, updates tgbotapi.UpdatesChannel, 
 	var selectedPlayers []structs.Player
 
 	for {
+		if isUnique && len(selectedPlayers) == 1 {
+			return &selectedPlayers
+		}
+
 		// TODO multiple rows
 		var buttonRows [][]tgbotapi.KeyboardButton
 		for _, player := range allPlayers {
@@ -253,7 +283,7 @@ func enterPlayersForRole(bot *tgbotapi.BotAPI, updates tgbotapi.UpdatesChannel, 
 		}
 		buttonRows = append(buttonRows, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton("Cancel"), tgbotapi.NewKeyboardButton("Finish")))
 
-		message := tgbotapi.NewMessage(chatId, fmt.Sprintf("Select player for team %s, role %s, or press Finish", team, role))
+		message := tgbotapi.NewMessage(chatId, fmt.Sprintf("Select player for team %s, role %s (unique = %v), or press Finish", team, role, isUnique))
 		message.ReplyMarkup = tgbotapi.NewReplyKeyboard(buttonRows...)
 		bot.Send(message)
 

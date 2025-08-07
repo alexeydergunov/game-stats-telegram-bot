@@ -5,9 +5,14 @@ type Player struct {
 	TgId int64
 }
 
+type Role struct {
+	Name     string
+	IsUnique bool
+}
+
 type Game struct {
 	Name  string
-	Roles map[string][]string // team -> list of roles
+	Roles map[string][]Role // team -> list of roles
 }
 
 type Result struct {

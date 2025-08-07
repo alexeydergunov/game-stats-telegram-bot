@@ -9,30 +9,52 @@ func GetSupportedGames() []Game {
 	return []Game{
 		{
 			Name: "Codenames",
-			Roles: map[string][]string{
-				"First":  {"FirstTeamCaptain", "FirstTeamPlayer"},
-				"Second": {"SecondTeamCaptain", "SecondTeamPlayer"},
+			Roles: map[string][]Role{
+				"First": {
+					{Name: "FirstTeamCaptain", IsUnique: true},
+					{Name: "FirstTeamPlayer", IsUnique: false},
+				},
+				"Second": {
+					{Name: "SecondTeamCaptain", IsUnique: true},
+					{Name: "SecondTeamPlayer", IsUnique: false},
+				},
 			},
 		},
 		{
 			Name: "Decrypto",
-			Roles: map[string][]string{
-				"White": {"WhitePlayer"},
-				"Black": {"BlackPlayer"},
+			Roles: map[string][]Role{
+				"White": {
+					{Name: "WhitePlayer", IsUnique: false},
+				},
+				"Black": {
+					{Name: "BlackPlayer", IsUnique: false},
+				},
 			},
 		},
 		{
 			Name: "Secret Hitler",
-			Roles: map[string][]string{
-				"Liberals": {"Liberal"},
-				"Fascists": {"Fascist", "Hitler"},
+			Roles: map[string][]Role{
+				"Liberals": {
+					{Name: "Liberal", IsUnique: false},
+				},
+				"Fascists": {
+					{Name: "Fascist", IsUnique: false},
+					{Name: "Hitler", IsUnique: true},
+				},
 			},
 		},
 		{
 			Name: "Avalon",
-			Roles: map[string][]string{
-				"Knights":   {"Merlin", "Perceval", "Knight"},
-				"Assassins": {"Morgana", "Assassin"},
+			Roles: map[string][]Role{
+				"Knights": {
+					{Name: "Merlin", IsUnique: true},
+					{Name: "Perceval", IsUnique: true},
+					{Name: "Knight", IsUnique: false},
+				},
+				"Assassins": {
+					{Name: "Morgana", IsUnique: true},
+					{Name: "Assassin", IsUnique: false},
+				},
 			},
 		},
 	}
