@@ -119,14 +119,15 @@ func RunBot(token string, sqlDb *sql.DB, games []structs.Game) {
 				}
 			}
 
-			var teams []string
+			var allTeams []string
 			for team := range game.Roles {
-				teams = append(teams, team)
+				allTeams = append(allTeams, team)
 			}
+			teamCount := len(allTeams)
 			var teamOrder []string
 			failure := false
-			for place := 1; place <= len(teams); place++ {
-				team := enterTeam(bot, updates, chatId, teams, int64(place))
+			for place := 1; place <= teamCount; place++ {
+				team := enterTeam(bot, updates, chatId, allTeams, int64(place))
 				if team == nil {
 					cancelMessage := tgbotapi.NewMessage(chatId, "New match registration was cancelled")
 					cancelMessage.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
@@ -147,6 +148,7 @@ func RunBot(token string, sqlDb *sql.DB, games []structs.Game) {
 					break
 				}
 				teamOrder = append(teamOrder, *team)
+				allTeams = deleteFromSlice(allTeams, []string{*team})
 			}
 			if failure {
 				continue
