@@ -76,6 +76,7 @@ func RunBot(token string, sqlDb *sql.DB, games []structs.Game) {
 			if err != nil {
 				replyMessage := tgbotapi.NewMessage(chatId, "Wrong arguments, use '/get_match_result [match_id]'")
 				replyMessage.ReplyToMessageID = message.MessageID
+				replyMessage.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 				send(bot, replyMessage)
 			} else {
 				GetMatchResult(bot, chatId, message.MessageID, sqlDb, matchId)
@@ -88,6 +89,7 @@ func RunBot(token string, sqlDb *sql.DB, games []structs.Game) {
 			if game == nil {
 				replyMessage := tgbotapi.NewMessage(chatId, "Wrong arguments or unsupported game, use '/get_rating_list [game]'")
 				replyMessage.ReplyToMessageID = message.MessageID
+				replyMessage.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 				send(bot, replyMessage)
 			} else {
 				GetRatingList(bot, chatId, message.MessageID, sqlDb, *game)
